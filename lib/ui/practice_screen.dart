@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../audio/audio_source.dart';
 import '../audio/note_listener.dart';
@@ -53,10 +54,12 @@ class _PracticeScreenState extends State<PracticeScreen> {
     );
     _controller.addListener(_onControllerChanged);
     _controller.start();
+    WakelockPlus.enable();
   }
 
   @override
   void dispose() {
+    WakelockPlus.disable();
     _controller.dispose();
     super.dispose();
   }
