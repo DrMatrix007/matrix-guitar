@@ -49,6 +49,7 @@ void main() {
               final staff = tester.widget<StaffNotation>(
                 find.byType(StaffNotation),
               );
+              expect(staff.stacked, isTrue);
               final board = tester.widget<Fretboard>(find.byType(Fretboard));
               expect(
                 staff.notes.map((n) => n.name),
@@ -62,7 +63,7 @@ void main() {
               }
               expect(
                 board.highlight!.midi,
-                staff.notes[staff.selectedIndex].midi,
+                staff.notes[staff.selectedIndex].midi - 12,
               );
               for (final position in board.scale.positions) {
                 expect(
@@ -136,6 +137,10 @@ void main() {
             .notes
             .map((n) => n.midi),
         targets.map((t) => t.position.midi),
+      );
+      expect(
+        tester.widget<StaffNotation>(find.byType(StaffNotation)).stacked,
+        isFalse,
       );
       await tester.tap(find.text('V7 · G7'));
       await tester.pump();
