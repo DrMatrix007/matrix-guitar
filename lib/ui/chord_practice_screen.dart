@@ -7,6 +7,7 @@ import '../audio/strum_detector.dart';
 import '../practice/chord_practice_controller.dart';
 import '../theory/chord.dart';
 import 'chord_diagram.dart';
+import 'feedback_transition.dart';
 import 'mic_gate.dart';
 import 'summary_screen.dart';
 
@@ -113,12 +114,15 @@ class _ChordPracticeView extends StatelessWidget {
           Text('Listening...', style: textTheme.titleLarge),
           if (strum != null) ...[
             const SizedBox(height: 8),
-            Text(
-              strum.correct ? 'Correct' : _wrongText(strum),
-              style: textTheme.titleMedium?.copyWith(
-                color: strum.correct
-                    ? correctColor
-                    : Theme.of(context).colorScheme.error,
+            FeedbackTransition(
+              value: strum.correct ? 'Correct' : _wrongText(strum),
+              child: Text(
+                strum.correct ? 'Correct' : _wrongText(strum),
+                style: textTheme.titleMedium?.copyWith(
+                  color: strum.correct
+                      ? correctColor
+                      : Theme.of(context).colorScheme.error,
+                ),
               ),
             ),
           ],

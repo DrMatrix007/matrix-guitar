@@ -9,6 +9,7 @@ import '../practice/practice_options.dart';
 import '../practice/practice_session.dart';
 import '../theory/scale.dart';
 import 'fretboard.dart';
+import 'feedback_transition.dart';
 import 'mic_gate.dart';
 import 'summary_screen.dart';
 
@@ -135,7 +136,13 @@ class _PracticeView extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             if (expected != null)
-              Text(_nextNoteText(expected), style: textTheme.titleLarge),
+              FeedbackTransition(
+                value: _nextNoteText(expected),
+                child: Text(
+                  _nextNoteText(expected),
+                  style: textTheme.titleLarge,
+                ),
+              ),
           ],
           const SizedBox(height: 8),
           Wrap(
@@ -151,9 +158,12 @@ class _PracticeView extends StatelessWidget {
           ),
           if (event != null) ...[
             const SizedBox(height: 8),
-            Text(
-              correct ? 'Correct' : 'Wrong: played ${_name(event.midi)}',
-              style: textTheme.titleMedium?.copyWith(color: resultColor),
+            FeedbackTransition(
+              value: correct ? 'Correct' : 'Wrong: played ${_name(event.midi)}',
+              child: Text(
+                correct ? 'Correct' : 'Wrong: played ${_name(event.midi)}',
+                style: textTheme.titleMedium?.copyWith(color: resultColor),
+              ),
             ),
             Text(
               _centsLabel(event.cents),

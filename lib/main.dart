@@ -7,9 +7,9 @@ import 'audio/mic_audio_source.dart';
 import 'theory/chord.dart';
 import 'theory/scale.dart';
 import 'ui/scale_list_screen.dart';
+import 'ui/app_theme.dart';
 
 const _fakeAudio = kDebugMode && bool.fromEnvironment('FAKE_AUDIO');
-const _seedColor = Color(0xFFC026D3);
 
 void main() {
   runApp(
@@ -39,12 +39,7 @@ class MatrixGuitarApp extends StatelessWidget {
     return MaterialApp(
       title: 'Matrix Guitar',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: _seedColor,
-          brightness: Brightness.dark,
-        ),
-      ),
+      theme: buildAppTheme(),
       builder: _fakeAudio
           ? (_, child) => _SimulatedAudioStrip(child: child!)
           : null,

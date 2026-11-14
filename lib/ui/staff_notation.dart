@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 
 import 'fretboard.dart';
+import 'note_transition.dart';
 
 class StaffNote {
   final int midi;
@@ -36,11 +37,15 @@ class StaffNotation extends StatelessWidget {
     child: SizedBox(
       height: 190,
       width: double.infinity,
-      child: CustomPaint(
-        painter: _StaffPainter(
-          notes,
-          selectedIndex,
-          Theme.of(context).colorScheme,
+      child: NoteTransition(
+        selection: (selectedIndex, notes[selectedIndex].midi),
+        builder: (context, emphasis) => CustomPaint(
+          painter: _StaffPainter(
+            notes,
+            selectedIndex,
+            Theme.of(context).colorScheme,
+            emphasis,
+          ),
         ),
       ),
     ),
@@ -51,8 +56,9 @@ class _StaffPainter extends CustomPainter {
   final List<StaffNote> notes;
   final int selectedIndex;
   final ColorScheme colors;
+  final double emphasis;
 
-  _StaffPainter(this.notes, this.selectedIndex, this.colors);
+  _StaffPainter(this.notes, this.selectedIndex, this.colors, this.emphasis);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -71,6 +77,16 @@ class _StaffPainter extends CustomPainter {
       final x = 56 + width * (index + .5);
       final center = Offset(x, y(note.staffStep));
       final color = index == selectedIndex ? highlightFill : colors.onSurface;
+      if (index == selectedIndex) {
+        canvas.drawCircle(
+          center,
+          15 + (1 - emphasis) * 4,
+          Paint()
+            ..color = highlightFill.withValues(
+              alpha: 0.1 + (1 - emphasis) * 0.12,
+            ),
+        );
+      }
       for (var ledger = -2; ledger >= note.staffStep; ledger -= 2) {
         canvas.drawLine(
           Offset(x - 12, y(ledger)),
@@ -139,6 +155,7 @@ class _StaffPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_StaffPainter oldDelegate) =>
+      oldDelegate.emphasis != emphasis ||
       oldDelegate.notes != notes ||
       oldDelegate.selectedIndex != selectedIndex ||
       oldDelegate.colors != colors;

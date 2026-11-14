@@ -3,10 +3,11 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 
 import '../theory/scale.dart';
+import 'note_transition.dart';
 
 const _aspectRatio = 1.5;
 const _stringCount = 6;
-const highlightFill = Color(0xFFFFB300);
+const highlightFill = Color(0xFF93C5FD);
 const _onHighlightFill = Colors.black;
 
 class Fretboard extends StatelessWidget {
@@ -27,14 +28,18 @@ class Fretboard extends StatelessWidget {
   Widget build(BuildContext context) {
     return AspectRatio(
       aspectRatio: _aspectRatio,
-      child: CustomPaint(
-        painter: _FretboardPainter(
-          scale: scale,
-          positions: scale.positions,
-          noteName: noteName ?? scale.spelledPitchClass,
-          highlight: highlight,
-          showNames: showNames,
-          colors: Theme.of(context).colorScheme,
+      child: NoteTransition(
+        selection: (highlight?.string, highlight?.fret),
+        builder: (context, emphasis) => CustomPaint(
+          painter: _FretboardPainter(
+            scale: scale,
+            positions: scale.positions,
+            noteName: noteName ?? scale.spelledPitchClass,
+            highlight: highlight,
+            showNames: showNames,
+            emphasis: emphasis,
+            colors: Theme.of(context).colorScheme,
+          ),
         ),
       ),
     );
@@ -47,6 +52,7 @@ class _FretboardPainter extends CustomPainter {
   final ScalePosition? highlight;
   final bool showNames;
   final ColorScheme colors;
+  final double emphasis;
   final String Function(int) noteName;
 
   _FretboardPainter({
@@ -55,6 +61,7 @@ class _FretboardPainter extends CustomPainter {
     required this.highlight,
     required this.showNames,
     required this.colors,
+    required this.emphasis,
     required this.noteName,
   });
 
@@ -117,7 +124,21 @@ class _FretboardPainter extends CustomPainter {
           ? (colors.primary, colors.onPrimary)
           : (colors.secondaryContainer, colors.onSecondaryContainer);
 
-      canvas.drawCircle(center, rowHeight * 0.42, Paint()..color = fill);
+      if (isHighlight) {
+        canvas.drawCircle(
+          center,
+          rowHeight * (0.58 + (1 - emphasis) * 0.12),
+          Paint()
+            ..color = highlightFill.withValues(
+              alpha: 0.08 + (1 - emphasis) * 0.12,
+            ),
+        );
+      }
+      canvas.drawCircle(
+        center,
+        rowHeight * 0.42 * (isHighlight ? 1 + (1 - emphasis) * 0.12 : 1),
+        Paint()..color = fill,
+      );
       if (isHighlight) {
         canvas.drawCircle(
           center,
@@ -164,6 +185,7 @@ class _FretboardPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_FretboardPainter oldDelegate) =>
+      oldDelegate.emphasis != emphasis ||
       oldDelegate.scale != scale ||
       oldDelegate.noteName != noteName ||
       oldDelegate.colors != colors ||
