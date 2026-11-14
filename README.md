@@ -16,11 +16,19 @@ In debug builds, `flutter run --dart-define=FAKE_AUDIO=true` plays simulated aud
 
 ## Practice
 
-Pick a scale, arpeggio or chord from the three tabs. For a scale or arpeggio, then pick any of the 12 root notes and a fret window.
+Pick a scale, arpeggio or chord from the first three tabs. For a scale or arpeggio, then pick any of the 12 root notes and a fret window.
 
 Before starting a scale or arpeggio, choose direction (ascending, descending, both), note order (straight, thirds, groups of 3 or 4, random), repeats (1-3), and hints (full, no names, from memory).
 
 For chords, pick a chord, see its diagram and spelled notes, and strum it 10 times. Every failed strum counts as wrong and tells you which notes were missing or extra.
+
+## Theory practice
+
+The fourth, scrollable Theory tab offers all 12 major keys and ii7–V7–Imaj7, I–vi–IV–V, I–V/ii–ii–V–I and I–IV–iv–I. Roman numerals label function in the key; chord-tone degrees are relative to the current chord root. V/ii is a secondary dominant seventh chord; iv borrows the minor subdominant from parallel minor.
+
+Choose chord-tone targeting (root, third, fifth or seventh), nearest guide-tone voice leading, progression transposition, or construction and inversions. Expand Music theory basics for the vocabulary and How this exercise works for a worked example in your selected key. Quiz reminders explain the method without showing the answer; feedback explains the notes, intervals and bass after an attempt. Quizzes allow retries and track progress. Seventh targeting requires the all-seventh progression; guide tones use only the third on triads. Guide-tone movement stays in frets 3–7, starts nearest middle C (C4), then minimizes semitone movement with lower-pitch ties.
+
+Chord-tone and guide-tone exercises also support microphone practice through the existing single-note listener. Match the shown octave and mute other strings. An advanced shell-voicing and chord-melody example is available for exploration, but theory practice cannot grade polyphonic voicings, inversions or chord melody.
 
 ## Limitations
 
