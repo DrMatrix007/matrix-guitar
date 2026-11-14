@@ -1,8 +1,11 @@
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:matrix_guitar/audio/debug_tone_source.dart';
 import 'package:matrix_guitar/audio/note_listener.dart';
 import 'package:matrix_guitar/audio/pitch_detector.dart';
+import 'package:matrix_guitar/audio/strum_detector.dart';
+import 'package:matrix_guitar/theory/note.dart';
 
 const pureProfile = [1.0];
 const guitarProfile = [1.0, .8, .5, .3, .2, .1];
@@ -56,6 +59,69 @@ Float64List glide(
 
 Float64List concat(List<Float64List> parts) =>
     Float64List.fromList([for (final part in parts) ...part]);
+
+Float64List mix(List<Float64List> parts) {
+  final samples = Float64List(parts.map((part) => part.length).reduce(max));
+  for (final part in parts) {
+    for (var i = 0; i < part.length; i++) {
+      samples[i] += part[i];
+    }
+  }
+  return samples;
+}
+
+Float64List detunedPluck(
+  int midi,
+  double cents, {
+  List<double> harmonics = guitarProfile,
+  double amplitude = 0.5,
+  double duration = 1,
+}) {
+  final frequency = midiToFrequency(midi + cents / 100);
+  final scale = amplitude / harmonics.reduce((a, b) => a + b);
+  final samples = silence(duration);
+  for (var i = 0; i < samples.length; i++) {
+    final t = i / sampleRate;
+    var sum = 0.0;
+    for (var k = 0; k < harmonics.length; k++) {
+      final number = k + 1;
+      sum +=
+          harmonics[k] *
+          exp(-t * (1 + 0.6 * number)) *
+          sin(2 * pi * frequency * number * t + k);
+    }
+    samples[i] = scale * sum;
+  }
+  return samples;
+}
+
+Float64List overlapStrums(
+  List<int> notes, {
+  required double gap,
+  required int count,
+  double duration = 2,
+}) {
+  final strum = synthStrum(notes, duration: duration);
+  return mix([
+    for (var i = 0; i < count; i++) concat([silence(i * gap), strum]),
+  ]);
+}
+
+List<StrumEvent> runStrums(
+  Float64List samples,
+  List<int> notes, {
+  int? chunkSize,
+}) {
+  final events = <StrumEvent>[];
+  final detector = StrumDetector(notes: notes, onStrum: events.add);
+  final step = chunkSize ?? samples.length;
+  for (var start = 0; start < samples.length; start += step) {
+    detector.addSamples(
+      samples.sublist(start, min(start + step, samples.length)),
+    );
+  }
+  return events;
+}
 
 ({List<NoteEvent> events, List<FrameReading> readings}) runListener(
   Float64List samples, {

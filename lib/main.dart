@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'audio/audio_source.dart';
 import 'audio/debug_tone_source.dart';
 import 'audio/mic_audio_source.dart';
+import 'theory/chord.dart';
 import 'theory/scale.dart';
 import 'ui/scale_list_screen.dart';
 
@@ -16,14 +17,22 @@ void main() {
       audioSourceFactory: _fakeAudio
           ? DebugToneSource.new
           : (_) => MicAudioSource(),
+      chordAudioSourceFactory: _fakeAudio
+          ? DebugToneSource.strums
+          : (_) => MicAudioSource(),
     ),
   );
 }
 
 class MatrixGuitarApp extends StatelessWidget {
   final AudioSource Function(List<ScalePosition>) audioSourceFactory;
+  final AudioSource Function(ChordVoicing) chordAudioSourceFactory;
 
-  const MatrixGuitarApp({super.key, required this.audioSourceFactory});
+  const MatrixGuitarApp({
+    super.key,
+    required this.audioSourceFactory,
+    required this.chordAudioSourceFactory,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +48,10 @@ class MatrixGuitarApp extends StatelessWidget {
       builder: _fakeAudio
           ? (_, child) => _SimulatedAudioStrip(child: child!)
           : null,
-      home: ScaleListScreen(audioSourceFactory: audioSourceFactory),
+      home: ScaleListScreen(
+        audioSourceFactory: audioSourceFactory,
+        chordAudioSourceFactory: chordAudioSourceFactory,
+      ),
     );
   }
 }

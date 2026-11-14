@@ -1,6 +1,6 @@
 import 'note.dart';
 
-const _openStringMidi = [64, 59, 55, 50, 45, 40];
+const openStringMidi = [64, 59, 55, 50, 45, 40];
 
 const _blackKeys = {1, 3, 6, 8, 10};
 const _fSharp = 6;
@@ -287,7 +287,7 @@ const List<PatternDefinition> patterns = [
 
 List<int> _rootFrets(int root, int string) => [
   for (var fret = 0; fret <= 12; fret++)
-    if ((_openStringMidi[string - 1] + fret) % 12 == root) fret,
+    if ((openStringMidi[string - 1] + fret) % 12 == root) fret,
 ];
 
 FretWindow _windowAround(int anchor) => anchor <= 3
@@ -385,9 +385,9 @@ class ScaleDefinition {
 
   List<ScalePosition> _findPositions() {
     final byMidi = <int, ScalePosition>{};
-    for (var string = _openStringMidi.length; string >= 1; string--) {
+    for (var string = openStringMidi.length; string >= 1; string--) {
       for (var fret = minFret; fret <= maxFret; fret++) {
-        final midi = _openStringMidi[string - 1] + fret;
+        final midi = openStringMidi[string - 1] + fret;
         if (intervals.contains((midi - root) % 12)) {
           byMidi[midi] = ScalePosition(string: string, fret: fret, midi: midi);
         }

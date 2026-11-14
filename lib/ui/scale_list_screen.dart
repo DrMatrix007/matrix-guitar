@@ -1,18 +1,25 @@
 import 'package:flutter/material.dart';
 
 import '../audio/audio_source.dart';
+import '../theory/chord.dart';
 import '../theory/scale.dart';
+import 'chord_list_screen.dart';
 import 'scale_detail_screen.dart';
 
 class ScaleListScreen extends StatelessWidget {
   final AudioSource Function(List<ScalePosition>) audioSourceFactory;
+  final AudioSource Function(ChordVoicing) chordAudioSourceFactory;
 
-  const ScaleListScreen({super.key, required this.audioSourceFactory});
+  const ScaleListScreen({
+    super.key,
+    required this.audioSourceFactory,
+    required this.chordAudioSourceFactory,
+  });
 
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 2,
+      length: 3,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Matrix Guitar'),
@@ -20,6 +27,7 @@ class ScaleListScreen extends StatelessWidget {
             tabs: [
               Tab(text: 'Scales'),
               Tab(text: 'Arpeggios'),
+              Tab(text: 'Chords'),
             ],
           ),
         ),
@@ -27,6 +35,7 @@ class ScaleListScreen extends StatelessWidget {
           children: [
             _patternList(context, PatternKind.scale),
             _patternList(context, PatternKind.arpeggio),
+            ChordListScreen(chordAudioSourceFactory: chordAudioSourceFactory),
           ],
         ),
       ),

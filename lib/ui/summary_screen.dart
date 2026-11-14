@@ -1,16 +1,22 @@
 import 'package:flutter/material.dart';
 
 import '../practice/practice_session.dart';
-import '../theory/scale.dart';
 
 class SummaryScreen extends StatelessWidget {
-  final ScaleDefinition scale;
+  final String title;
   final SessionSummary summary;
+  final String Function(int)? noteName;
 
-  const SummaryScreen({super.key, required this.scale, required this.summary});
+  const SummaryScreen({
+    super.key,
+    required this.title,
+    required this.summary,
+    this.noteName,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final noteName = this.noteName;
     final textTheme = Theme.of(context).textTheme;
     final total = summary.correct + summary.wrong;
     final percent = (summary.accuracy * 100).round();
@@ -21,7 +27,7 @@ class SummaryScreen extends StatelessWidget {
     );
 
     return Scaffold(
-      appBar: AppBar(title: Text(scale.name)),
+      appBar: AppBar(title: Text(title)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -35,14 +41,16 @@ class SummaryScreen extends StatelessWidget {
             const SizedBox(height: 16),
             Text('Time taken', style: textTheme.titleMedium),
             Text('$minutes:$seconds', style: textTheme.headlineSmall),
-            const SizedBox(height: 16),
-            Text('Most troublesome notes', style: textTheme.titleMedium),
-            if (summary.troubleNotes.isEmpty) const Text('No wrong notes.'),
-            for (final note in summary.troubleNotes)
-              Text(
-                '${scale.spelledNote(note.midi)} - '
-                '${note.wrongCount} wrong',
-              ),
+            if (noteName != null) ...[
+              const SizedBox(height: 16),
+              Text('Most troublesome notes', style: textTheme.titleMedium),
+              if (summary.troubleNotes.isEmpty) const Text('No wrong notes.'),
+              for (final note in summary.troubleNotes)
+                Text(
+                  '${noteName(note.midi)} - '
+                  '${note.wrongCount} wrong',
+                ),
+            ],
             const SizedBox(height: 24),
             FilledButton(
               onPressed: () => Navigator.of(context).pop(),

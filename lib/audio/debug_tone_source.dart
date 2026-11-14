@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'dart:typed_data';
 
+import '../theory/chord.dart';
 import '../theory/note.dart';
 import '../theory/scale.dart';
 import 'audio_source.dart';
@@ -40,6 +41,26 @@ Float64List synthPluck({
   return samples;
 }
 
+Float64List synthStrum(
+  List<int> midis, {
+  double stagger = 0.015,
+  double duration = 0.8,
+}) {
+  final samples = Float64List((duration * sampleRate).round());
+  for (final (index, midi) in midis.indexed) {
+    final offset = (index * stagger * sampleRate).round();
+    final pluck = synthPluck(
+      midi: midi,
+      amplitude: 1 / midis.length,
+      duration: duration,
+    );
+    for (var i = 0; i + offset < samples.length; i++) {
+      samples[offset + i] += pluck[i];
+    }
+  }
+  return samples;
+}
+
 class DebugToneSource implements AudioSource {
   late final Float64List _audio;
   var _cursor = 0;
@@ -52,6 +73,17 @@ class DebugToneSource implements AudioSource {
     _audio = Float64List.fromList([
       for (final midi in midis)
         ...synthPluck(midi: midi, duration: _noteDuration),
+    ]);
+  }
+
+  DebugToneSource.strums(ChordVoicing chord) {
+    final notes = chord.playedNotes;
+    final goodStrum = synthStrum(notes);
+    _audio = Float64List.fromList([
+      ...goodStrum,
+      ...goodStrum,
+      ...synthStrum([for (final note in notes) note + 1]),
+      for (var i = 0; i < chordStrumCount; i++) ...goodStrum,
     ]);
   }
 

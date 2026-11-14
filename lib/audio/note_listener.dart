@@ -4,7 +4,7 @@ import 'dart:typed_data';
 import '../theory/note.dart';
 import 'pitch_detector.dart';
 
-const _gateDb = -45.0;
+const gateDb = -45.0;
 const _confirmFrames = 3;
 const _attackRatio = 2.0;
 const _phantomIntervals = {12, 19, 24};
@@ -70,7 +70,7 @@ class NoteListener {
   void _processFrame() {
     final rms = _frameRms();
     final levelDb = 20 * log(rms) / ln10;
-    final audible = levelDb >= _gateDb;
+    final audible = levelDb >= gateDb;
     final frequency = audible ? _detector.detect(_frame) : null;
     final note = frequency == null ? null : frequencyToNote(frequency);
     onReading(

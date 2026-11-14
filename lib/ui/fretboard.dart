@@ -6,7 +6,7 @@ import '../theory/scale.dart';
 
 const _aspectRatio = 1.5;
 const _stringCount = 6;
-const _highlightFill = Color(0xFFFFB300);
+const highlightFill = Color(0xFFFFB300);
 const _onHighlightFill = Colors.black;
 
 class Fretboard extends StatelessWidget {
@@ -107,7 +107,7 @@ class _FretboardPainter extends CustomPainter {
       );
       final isHighlight = position.midi == highlight?.midi;
       final (fill, onFill) = isHighlight
-          ? (_highlightFill, _onHighlightFill)
+          ? (highlightFill, _onHighlightFill)
           : scale.isRoot(position.midi)
           ? (colors.primary, colors.onPrimary)
           : (colors.secondaryContainer, colors.onSecondaryContainer);
@@ -118,7 +118,7 @@ class _FretboardPainter extends CustomPainter {
           center,
           rowHeight * 0.5,
           Paint()
-            ..color = _highlightFill
+            ..color = highlightFill
             ..style = PaintingStyle.stroke
             ..strokeWidth = rowHeight * 0.06,
         );

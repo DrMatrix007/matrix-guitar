@@ -2,7 +2,7 @@
 
 # matrix-guitar
 
-A Flutter app for learning guitar scales and arpeggios. Browse a library of both, see each one on a fretboard, practice it with real-time feedback from the microphone, and review a summary of each session.
+A Flutter app for learning guitar scales, arpeggios and chords. Browse a library of all three, see each scale or arpeggio on a fretboard and each chord as a diagram, practice it with real-time feedback from the microphone, and review a summary of each session.
 
 ## Run
 
@@ -16,9 +16,11 @@ In debug builds, `flutter run --dart-define=FAKE_AUDIO=true` plays simulated aud
 
 ## Practice
 
-Pick a scale or arpeggio from the two tabs, then any of the 12 root notes and a fret window.
+Pick a scale, arpeggio or chord from the three tabs. For a scale or arpeggio, then pick any of the 12 root notes and a fret window.
 
-Before starting, choose direction (ascending, descending, both), note order (straight, thirds, groups of 3 or 4, random), repeats (1-3), and hints (full, no names, from memory).
+Before starting a scale or arpeggio, choose direction (ascending, descending, both), note order (straight, thirds, groups of 3 or 4, random), repeats (1-3), and hints (full, no names, from memory).
+
+For chords, pick a chord, see its diagram and spelled notes, and strum it 10 times. Every failed strum counts as wrong and tells you which notes were missing or extra.
 
 ## Limitations
 
@@ -29,5 +31,11 @@ Before starting, choose direction (ascending, descending, both), note order (str
 - Deep beating in a ringing note, with its level dipping 70% or more several times a second, can report false repeats.
 - The expected note always passes the harmonic filter so runs don't stall, which means a strong octave harmonic of a ringing note can occasionally count as the expected note an octave up.
 - Latency and accuracy have been measured only on synthetic signals, not on a real guitar and phone.
+- The check is built around the voicing shown, so the same chord in another shape may pass or fail.
+- Leave about 0.5 s between strums; strums spaced closer than that are often scored wrong.
+- A lone pluck or knock while a chord is still ringing can earn a correct rep, because the verdict hears the ring.
+- Strums slower than about 250 ms from first to last string can be misjudged, or counted as two.
+- The guitar needs to be in tune, roughly within 20-30 cents; 45 cents sharp fails badly.
+- Strum detection has been tested only on synthetic audio, not on a real guitar.
 
 Created in [T3 Code](https://t3.codes).

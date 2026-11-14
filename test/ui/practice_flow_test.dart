@@ -9,8 +9,11 @@ import 'package:matrix_guitar/main.dart';
 import 'package:matrix_guitar/practice/practice_controller.dart';
 import 'package:matrix_guitar/practice/practice_options.dart';
 import 'package:matrix_guitar/practice/practice_session.dart';
+import 'package:matrix_guitar/theory/chord.dart';
 import 'package:matrix_guitar/theory/note.dart';
 import 'package:matrix_guitar/theory/scale.dart';
+import 'package:matrix_guitar/ui/chord_diagram.dart';
+import 'package:matrix_guitar/ui/chord_practice_screen.dart';
 import 'package:matrix_guitar/ui/fretboard.dart';
 
 import '../helpers/fake_audio_source.dart';
@@ -53,13 +56,22 @@ Future<void> scrollListTo(WidgetTester tester, String label) =>
       ),
     );
 
-Future<void> launchApp(WidgetTester tester, FakeAudioSource fake) async {
+void prepareView(WidgetTester tester) {
   tester.view.physicalSize = const Size(360, 640);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
   tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+}
 
-  await tester.pumpWidget(MatrixGuitarApp(audioSourceFactory: (_) => fake));
+Future<void> launchApp(WidgetTester tester, FakeAudioSource fake) async {
+  prepareView(tester);
+
+  await tester.pumpWidget(
+    MatrixGuitarApp(
+      audioSourceFactory: (_) => fake,
+      chordAudioSourceFactory: (_) => fake,
+    ),
+  );
 }
 
 Future<void> openPattern(WidgetTester tester, String name) async {
@@ -88,6 +100,57 @@ Future<void> openPractice(
   }
   await tapLabel(tester, 'Start');
 }
+
+ChordVoicing chordNamed(String name) =>
+    chordLibrary.firstWhere((chord) => chord.name == name);
+
+void expectRep(WidgetTester tester, int rep) {
+  final shown = tester.widgetList<Text>(
+    find.textContaining(RegExp(r'^\w+ \d+ of 10$')),
+  );
+  expect(
+    find.textContaining(RegExp('^\\w+ $rep of 10\$')),
+    findsOneWidget,
+    reason: 'counter shows ${shown.map((text) => text.data).toList()}',
+  );
+}
+
+Future<void> openChordPractice(
+  WidgetTester tester,
+  FakeAudioSource fake,
+  ChordVoicing chord,
+) async {
+  prepareView(tester);
+
+  await tester.pumpWidget(
+    MaterialApp(
+      home: ChordPracticeScreen(
+        chord: chord,
+        chordAudioSourceFactory: (_) => fake,
+      ),
+    ),
+  );
+  await tester.pump();
+}
+
+Future<void> openChord(WidgetTester tester, String name) async {
+  await tapLabel(tester, 'Chords');
+  await openPattern(tester, name);
+}
+
+Future<void> openChordRun(
+  WidgetTester tester,
+  FakeAudioSource fake,
+  String name,
+) async {
+  await launchApp(tester, fake);
+  await openChord(tester, name);
+  await tapLabel(tester, 'Practice');
+}
+
+Float64List strums(ChordVoicing chord, int count) => concat([
+  for (var i = 0; i < count; i++) synthStrum(chord.playedNotes),
+]);
 
 ChoiceChip chip(WidgetTester tester, String label) =>
     tester.widget<ChoiceChip>(find.widgetWithText(ChoiceChip, label));
@@ -140,6 +203,7 @@ void main() {
 
     await finishTransition(tester);
 
+    expect(find.text(scale.name), findsOneWidget);
     expect(find.text('23 of 24 (96%)'), findsOneWidget);
     expect(find.text('0:16'), findsOneWidget);
     expect(find.text('D3 - 1 wrong'), findsOneWidget);
@@ -688,5 +752,346 @@ void main() {
         reason: 'showNames $showNames',
       );
     }
+  });
+
+  testWidgets('W24a one strum is one rep', (tester) async {
+    final chord = chordNamed('D');
+    final fake = FakeAudioSource();
+    await openChordPractice(tester, fake, chord);
+
+    expectRep(tester, 1);
+
+    fake.feed(
+      concat([
+        synthStrum(chord.playedNotes.reversed.toList(), stagger: 0.05),
+        silence(0.5),
+      ]),
+    );
+    await tester.pump();
+
+    expectRep(tester, 2);
+  });
+
+  testWidgets('W24b a single string does not count', (tester) async {
+    final fake = FakeAudioSource();
+    await openChordPractice(tester, fake, chordNamed('E'));
+
+    expectRep(tester, 1);
+
+    fake.feed(concat([synthPluck(midi: 40, duration: 0.8), silence(0.5)]));
+    await tester.pump();
+
+    expectRep(tester, 1);
+  });
+
+  testWidgets('W24c a wrong chord sharing a tone does not count', (
+    tester,
+  ) async {
+    final fake = FakeAudioSource();
+    await openChordPractice(tester, fake, chordNamed('E'));
+
+    expectRep(tester, 1);
+
+    fake.feed(
+      concat([
+        synthStrum(chordNamed('Em').playedNotes, stagger: 0.05),
+        silence(0.5),
+      ]),
+    );
+    await tester.pump();
+
+    expectRep(tester, 1);
+  });
+
+  testWidgets('W25 a full chord run through the UI reaches the summary', (
+    tester,
+  ) async {
+    final chord = chordNamed('E');
+    final fake = FakeAudioSource();
+    await launchApp(tester, fake);
+    await openChord(tester, 'E');
+
+    expect(find.text('E major'), findsOneWidget);
+    expect(find.text('Practice'), findsOneWidget);
+
+    await tapLabel(tester, 'Practice');
+
+    expect(find.text('Strum 1 of 10'), findsOneWidget);
+
+    fake.feed(synthStrum(chordNamed('Em').playedNotes));
+    await tester.pump();
+
+    expect(find.text('Wrong: missing G#, extra G'), findsOneWidget);
+    expect(find.text('Strum 1 of 10'), findsOneWidget);
+
+    for (var i = 0; i < 9; i++) {
+      fake.feed(synthStrum(chord.playedNotes));
+    }
+    await tester.pump();
+
+    expect(find.text('Strum 10 of 10'), findsOneWidget);
+    expect(fake.stopCalls, 0);
+
+    fake.feed(synthStrum(chord.playedNotes));
+    await tester.pump();
+
+    expect(find.text('Paused'), findsNothing);
+
+    for (var i = 0; i < 10; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(find.text('Paused'), findsNothing);
+    }
+
+    await finishTransition(tester);
+
+    expect(find.text('E major'), findsOneWidget);
+    expect(find.text('10 of 11 (91%)'), findsOneWidget);
+    expect(find.text('Most troublesome notes'), findsNothing);
+    expect(find.text('Paused'), findsNothing);
+    expect(fake.stopCalls, 1);
+
+    await tapLabel(tester, 'Done');
+
+    expect(find.text('Done'), findsNothing);
+    expect(find.text('E major'), findsOneWidget);
+    expect(find.text('Practice'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('W26 hide and show keeps the strum count and keeps counting', (
+    tester,
+  ) async {
+    final chord = chordNamed('E');
+    final fake = FakeAudioSource();
+    await openChordRun(tester, fake, 'E');
+
+    fake.feed(strums(chord, 3));
+    await tester.pump();
+
+    expect(find.text('Strum 4 of 10'), findsOneWidget);
+
+    hideApp(tester);
+    tester.binding.scheduleForcedFrame();
+    await tester.pump();
+
+    expect(find.text('Paused'), findsOneWidget);
+    expect(fake.stopCalls, 1);
+
+    showApp(tester);
+    await tester.pump();
+
+    expect(fake.startCalls, 2);
+    expect(find.text('Paused'), findsNothing);
+    expect(find.text('Strum 4 of 10'), findsOneWidget);
+
+    fake.feed(strums(chord, 1));
+    await tester.pump();
+
+    expect(find.text('Strum 5 of 10'), findsOneWidget);
+  });
+
+  testWidgets('W27a denied shows the message and try again starts the mic', (
+    tester,
+  ) async {
+    final fake = FakeAudioSource(
+      permissionResults: [MicPermission.denied, MicPermission.granted],
+    );
+    await openChordRun(tester, fake, 'E');
+
+    expect(
+      find.text('Microphone access is needed to hear your playing.'),
+      findsOneWidget,
+    );
+    expect(fake.startCalls, 0);
+
+    await tester.tap(find.text('Try again'));
+    await tester.pump();
+
+    expect(fake.requestPermissionCalls, 2);
+    expect(fake.startCalls, 1);
+    expect(find.text('Try again'), findsNothing);
+    expect(find.text('Strum 1 of 10'), findsOneWidget);
+  });
+
+  testWidgets('W27b permanently denied recovers after a settings round trip', (
+    tester,
+  ) async {
+    final fake = FakeAudioSource(
+      permissionResults: [MicPermission.permanentlyDenied],
+    );
+    await openChordRun(tester, fake, 'E');
+
+    expect(find.text('Open settings'), findsOneWidget);
+    expect(fake.startCalls, 0);
+
+    await tester.tap(find.text('Open settings'));
+    await tester.pump();
+
+    expect(fake.openSettingsCalls, 1);
+
+    fake.permissionResults.add(MicPermission.granted);
+    hideApp(tester);
+    showApp(tester);
+    await tester.pump();
+
+    expect(fake.requestPermissionCalls, 2);
+    expect(fake.startCalls, 1);
+    expect(find.text('Open settings'), findsNothing);
+    expect(find.text('Strum 1 of 10'), findsOneWidget);
+  });
+
+  testWidgets('W27c a start failure shows the error', (tester) async {
+    final fake = FakeAudioSource(startError: Exception('mic busy'));
+    await openChordRun(tester, fake, 'E');
+
+    expect(find.text('The microphone could not be started.'), findsOneWidget);
+    expect(find.text('Try again'), findsOneWidget);
+    expect(fake.stopCalls, 0);
+  });
+
+  testWidgets('W28a leaving during a pending request never starts the mic', (
+    tester,
+  ) async {
+    final permission = Completer<MicPermission>();
+    final fake = FakeAudioSource(permissionResults: [permission.future]);
+    await openChordRun(tester, fake, 'E');
+
+    expect(fake.requestPermissionCalls, 1);
+
+    await tester.pageBack();
+    await finishTransition(tester);
+
+    expect(find.text('Practice'), findsOneWidget);
+
+    permission.complete(MicPermission.granted);
+    await tester.pump();
+
+    expect(fake.startCalls, 0);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('W28b a start finishing after leaving turns the mic off', (
+    tester,
+  ) async {
+    final gate = Completer<void>();
+    final fake = FakeAudioSource(startGate: gate.future);
+    await openChordRun(tester, fake, 'E');
+
+    expect(fake.startCalls, 1);
+
+    await tester.pageBack();
+    await finishTransition(tester);
+
+    expect(find.text('Practice'), findsOneWidget);
+    expect(fake.stopCalls, 0);
+
+    gate.complete();
+    await tester.pump();
+
+    expect(fake.stopCalls, 1);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('W29 hide and show after completion leaves the mic off', (
+    tester,
+  ) async {
+    final fake = FakeAudioSource();
+    await openChordRun(tester, fake, 'E');
+
+    fake.feed(strums(chordNamed('E'), 10));
+
+    expect(fake.stopCalls, 1);
+
+    hideApp(tester);
+    showApp(tester);
+    await finishTransition(tester);
+
+    expect(fake.startCalls, 1);
+    expect(fake.stopCalls, 1);
+    expect(find.text('10 of 10 (100%)'), findsOneWidget);
+  });
+
+  testWidgets('W30 the debug strum source plays a run to the summary', (
+    tester,
+  ) async {
+    prepareView(tester);
+    await tester.pumpWidget(
+      const MatrixGuitarApp(
+        audioSourceFactory: DebugToneSource.new,
+        chordAudioSourceFactory: DebugToneSource.strums,
+      ),
+    );
+    await openChord(tester, 'E');
+    await tapLabel(tester, 'Practice');
+
+    for (var i = 0; i < 200 && find.text('Done').evaluate().isEmpty; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    await finishTransition(tester);
+
+    expect(find.text('10 of 11 (91%)'), findsOneWidget);
+  });
+
+  const diagramPaints = [
+    ('W31a', 'E', 1, 6, 3),
+    ('W31b', 'D', 1, 4, 5),
+    ('W31c', 'G5', 1, 3, 6),
+  ];
+
+  for (final (id, name, rects, circles, paragraphs) in diagramPaints) {
+    testWidgets('$id the $name diagram paints its grid, dots and marks', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(home: ChordDiagram(chord: chordNamed(name))),
+      );
+      final diagram = tester.renderObject(
+        find.descendant(
+          of: find.byType(ChordDiagram),
+          matching: find.byType(CustomPaint),
+        ),
+      );
+
+      expect(diagram, paintsExactlyCountTimes(#drawRect, rects));
+      expect(diagram, paintsExactlyCountTimes(#drawCircle, circles));
+      expect(diagram, paintsExactlyCountTimes(#drawParagraph, paragraphs));
+    });
+  }
+
+  testWidgets('W32 the Bb detail screen spells every note with flats', (
+    tester,
+  ) async {
+    await launchApp(tester, FakeAudioSource());
+    await openChord(tester, 'Bb');
+
+    expect(find.text('Notes: Bb  F  Bb  D  F'), findsOneWidget);
+    expect(
+      find.text(
+        'String 6: muted\n'
+        'String 5: fret 1 (Bb)\n'
+        'String 4: fret 3 (F)\n'
+        'String 3: fret 3 (Bb)\n'
+        'String 2: fret 3 (D)\n'
+        'String 1: fret 1 (F)',
+      ),
+      findsOneWidget,
+    );
+    expect(find.textContaining('A#'), findsNothing);
+  });
+
+  testWidgets('W33 events after completion are ignored', (tester) async {
+    final fake = FakeAudioSource();
+    await openChordRun(tester, fake, 'E');
+
+    fake.feed(strums(chordNamed('E'), 12));
+    await tester.pump();
+
+    expect(find.text('Paused'), findsNothing);
+
+    await finishTransition(tester);
+
+    expect(find.text('10 of 10 (100%)'), findsOneWidget);
+    expect(fake.stopCalls, 1);
   });
 }

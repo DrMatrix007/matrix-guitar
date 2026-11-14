@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../audio/audio_source.dart';
 import '../theory/scale.dart';
 import 'fretboard.dart';
+import 'legend_entry.dart';
 import 'practice_setup_screen.dart';
 
 const _defaultRoot = 9;
@@ -78,9 +79,9 @@ class _ScaleDetailScreenState extends State<ScaleDetailScreen> {
             const SizedBox(height: 8),
             Row(
               children: [
-                _LegendEntry(color: colors.primary, label: 'Root'),
+                LegendEntry(color: colors.primary, label: 'Root'),
                 const SizedBox(width: 16),
-                _LegendEntry(color: colors.secondaryContainer, label: 'Other'),
+                LegendEntry(color: colors.secondaryContainer, label: 'Other'),
               ],
             ),
             const SizedBox(height: 24),
@@ -98,25 +99,6 @@ class _ScaleDetailScreenState extends State<ScaleDetailScreen> {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _LegendEntry extends StatelessWidget {
-  final Color color;
-  final String label;
-
-  const _LegendEntry({required this.color, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        CircleAvatar(radius: 7, backgroundColor: color),
-        const SizedBox(width: 6),
-        Text(label),
-      ],
     );
   }
 }

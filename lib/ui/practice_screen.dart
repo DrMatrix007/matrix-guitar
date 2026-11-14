@@ -9,9 +9,9 @@ import '../practice/practice_options.dart';
 import '../practice/practice_session.dart';
 import '../theory/scale.dart';
 import 'fretboard.dart';
+import 'mic_gate.dart';
 import 'summary_screen.dart';
 
-const _correctColor = Color(0xFF66BB6A);
 const _inTuneLimit = 3;
 
 String _centsLabel(double cents) {
@@ -65,8 +65,9 @@ class _PracticeScreenState extends State<PracticeScreen> {
     if (_controller.session.phase != SessionPhase.complete) return;
     _controller.removeListener(_onControllerChanged);
     final summaryScreen = SummaryScreen(
-      scale: widget.scale,
+      title: widget.scale.name,
       summary: _controller.session.summary,
+      noteName: widget.scale.spelledNote,
     );
     Navigator.of(
       context,
@@ -79,39 +80,17 @@ class _PracticeScreenState extends State<PracticeScreen> {
       appBar: AppBar(title: Text(widget.scale.name)),
       body: ListenableBuilder(
         listenable: _controller,
-        builder: (context, _) => _buildBody(),
+        builder: (context, _) => MicGate(
+          controller: _controller,
+          child: _PracticeView(
+            controller: _controller,
+            scale: widget.scale,
+            noteCount: _noteCount,
+            hints: widget.hints,
+          ),
+        ),
       ),
     );
-  }
-
-  Widget _buildBody() {
-    final practiceView = _PracticeView(
-      controller: _controller,
-      scale: widget.scale,
-      noteCount: _noteCount,
-      hints: widget.hints,
-    );
-    if (_controller.session.phase == SessionPhase.complete) return practiceView;
-    return switch (_controller.micState) {
-      MicState.requesting => const Center(child: CircularProgressIndicator()),
-      MicState.denied => _MicMessage(
-        message: 'Microphone access is needed to hear your playing.',
-        actionLabel: 'Try again',
-        onAction: _controller.start,
-      ),
-      MicState.permanentlyDenied => _MicMessage(
-        message: 'Microphone access is blocked. Allow it in settings.',
-        actionLabel: 'Open settings',
-        onAction: _controller.openSettings,
-      ),
-      MicState.listening => practiceView,
-      MicState.paused => const Center(child: Text('Paused')),
-      MicState.error => _MicMessage(
-        message: 'The microphone could not be started.',
-        actionLabel: 'Try again',
-        onAction: _controller.start,
-      ),
-    };
   }
 }
 
@@ -136,7 +115,7 @@ class _PracticeView extends StatelessWidget {
     final event = controller.lastEvent;
     final correct = controller.lastResult == NoteResult.correct;
     final resultColor = correct
-        ? _correctColor
+        ? correctColor
         : Theme.of(context).colorScheme.error;
 
     return SingleChildScrollView(
@@ -194,33 +173,4 @@ class _PracticeView extends StatelessWidget {
   }
 
   String _name(int midi) => scale.spelledNote(midi);
-}
-
-class _MicMessage extends StatelessWidget {
-  final String message;
-  final String actionLabel;
-  final VoidCallback onAction;
-
-  const _MicMessage({
-    required this.message,
-    required this.actionLabel,
-    required this.onAction,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(message, textAlign: TextAlign.center),
-            const SizedBox(height: 16),
-            FilledButton(onPressed: onAction, child: Text(actionLabel)),
-          ],
-        ),
-      ),
-    );
-  }
 }
