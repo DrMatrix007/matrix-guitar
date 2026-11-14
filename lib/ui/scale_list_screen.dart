@@ -27,10 +27,10 @@ class ScaleListScreen extends StatelessWidget {
           bottom: const TabBar(
             isScrollable: true,
             tabs: [
-              Tab(text: 'Scales'),
-              Tab(text: 'Arpeggios'),
-              Tab(text: 'Chords'),
-              Tab(text: 'Theory'),
+              Tab(icon: Icon(Icons.stairs), text: 'Scales'),
+              Tab(icon: Icon(Icons.show_chart), text: 'Arpeggios'),
+              Tab(icon: Icon(Icons.piano), text: 'Chords'),
+              Tab(icon: Icon(Icons.school), text: 'Theory'),
             ],
           ),
         ),
@@ -60,6 +60,9 @@ class ScaleListScreen extends StatelessWidget {
               ),
             ),
           ListTile(
+            leading: Icon(
+              kind == PatternKind.scale ? Icons.stairs : Icons.show_chart,
+            ),
             title: Text(pattern.name),
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute<void>(

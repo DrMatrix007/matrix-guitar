@@ -4,7 +4,9 @@ import '../audio/audio_source.dart';
 import '../theory/harmony.dart';
 import '../theory/scale.dart';
 import 'theory_play_screen.dart';
+import 'progression_explorer.dart';
 import 'theory_visualization.dart';
+import 'fretboard_key_selector.dart';
 
 enum TheoryMode {
   chordTones('Chord-tone targeting'),
@@ -193,15 +195,15 @@ class _TheoryPracticeScreenState extends State<TheoryPracticeScreen> {
           ),
         ],
       ),
+      const ExpansionTile(
+        title: Text('Explore chord progressions'),
+        subtitle: Text('Chord notation, fretboard and voice leading'),
+        children: [ProgressionExplorer()],
+      ),
       const SizedBox(height: 16),
-      DropdownButtonFormField<int>(
-        initialValue: _key,
-        decoration: const InputDecoration(labelText: 'Major key'),
-        items: [
-          for (var key = 0; key < 12; key++)
-            DropdownMenuItem(value: key, child: Text('${rootName(key)} major')),
-        ],
-        onChanged: (value) => setState(() => _key = value!),
+      FretboardKeySelector(
+        root: _key,
+        onChanged: (value) => setState(() => _key = value),
       ),
       const SizedBox(height: 12),
       DropdownButtonFormField<int>(

@@ -22,17 +22,19 @@ class StaffNote {
 class StaffNotation extends StatelessWidget {
   final List<StaffNote> notes;
   final int selectedIndex;
+  final bool stacked;
 
   const StaffNotation({
     super.key,
     required this.notes,
     required this.selectedIndex,
+    this.stacked = false,
   });
 
   @override
   Widget build(BuildContext context) => Semantics(
     label:
-        'Treble staff, sounding pitches: ${notes.indexed.map((entry) => '${entry.$2.label}${entry.$1 == selectedIndex ? ', selected' : ''}').join('; ')}',
+        'Treble staff, ${stacked ? 'simultaneous chord' : 'note sequence'}, sounding pitches: ${notes.indexed.map((entry) => '${entry.$2.label}${entry.$1 == selectedIndex ? ', selected' : ''}').join('; ')}',
     child: SizedBox(
       height: 190,
       width: double.infinity,
@@ -41,6 +43,7 @@ class StaffNotation extends StatelessWidget {
           notes,
           selectedIndex,
           Theme.of(context).colorScheme,
+          stacked,
         ),
       ),
     ),
@@ -51,11 +54,13 @@ class _StaffPainter extends CustomPainter {
   final List<StaffNote> notes;
   final int selectedIndex;
   final ColorScheme colors;
+  final bool stacked;
 
-  _StaffPainter(this.notes, this.selectedIndex, this.colors);
+  _StaffPainter(this.notes, this.selectedIndex, this.colors, this.stacked);
 
   @override
   void paint(Canvas canvas, Size size) {
+    if (notes.isEmpty) return;
     final low = min(-2, notes.map((n) => n.staffStep).reduce(min));
     final high = max(10, notes.map((n) => n.staffStep).reduce(max));
     final step = min(6.0, (size.height - 65) / (high - low));
@@ -67,8 +72,10 @@ class _StaffPainter extends CustomPainter {
     }
     _text(canvas, '𝄞', Offset(22, y(4)), 48, colors.onSurface);
     final width = (size.width - 62) / notes.length;
+    final chordX = max(100.0, size.width * .6);
+    final accidentalBounds = <Rect>[];
     for (final (index, note) in notes.indexed) {
-      final x = 56 + width * (index + .5);
+      final x = stacked ? chordX : 56 + width * (index + .5);
       final center = Offset(x, y(note.staffStep));
       final color = index == selectedIndex ? highlightFill : colors.onSurface;
       for (var ledger = -2; ledger >= note.staffStep; ledger -= 2) {
@@ -89,11 +96,15 @@ class _StaffPainter extends CustomPainter {
         Rect.fromCenter(center: center, width: 13, height: 9),
         Paint()..color = color,
       );
-      final stemUp = note.staffStep < 4;
+      final stemUp = stacked ? notes.first.staffStep < 4 : note.staffStep < 4;
       final stemX = x + (stemUp ? 6 : -6);
+      final stemEnd = stacked
+          ? y(stemUp ? notes.last.staffStep : notes.first.staffStep) +
+                (stemUp ? -28 : 28)
+          : center.dy + (stemUp ? -28 : 28);
       canvas.drawLine(
         Offset(stemX, center.dy),
-        Offset(stemX, center.dy + (stemUp ? -28 : 28)),
+        Offset(stemX, stemEnd),
         Paint()
           ..color = color
           ..strokeWidth = 1.5,
@@ -102,20 +113,39 @@ class _StaffPainter extends CustomPainter {
           .substring(1)
           .replaceAll('#', '♯')
           .replaceAll('b', '♭');
-      _text(
-        canvas,
-        accidental.isEmpty ? '♮' : accidental,
-        Offset(x - 19, center.dy),
-        17,
-        colors.onSurface,
-      );
-      _text(
-        canvas,
-        note.label,
-        Offset(x, size.height - 15),
-        13,
-        colors.onSurface,
-      );
+      if (!stacked || accidental.isNotEmpty) {
+        final symbol = accidental.isEmpty ? '♮' : accidental;
+        final painter = TextPainter(
+          text: TextSpan(
+            text: symbol,
+            style: TextStyle(fontSize: 17, color: colors.onSurface),
+          ),
+          textDirection: TextDirection.ltr,
+        )..layout();
+        var left = x - 12 - painter.width;
+        final top = center.dy - painter.height / 2;
+        var bounds = Rect.fromLTWH(left, top, painter.width, painter.height);
+        if (stacked) {
+          while (accidentalBounds.any(
+            (other) => other.inflate(2).overlaps(bounds),
+          )) {
+            left -= painter.width + 4;
+            bounds = Rect.fromLTWH(left, top, painter.width, painter.height);
+          }
+          accidentalBounds.add(bounds);
+        }
+        painter.paint(canvas, Offset(left, top));
+        painter.dispose();
+      }
+      if (!stacked) {
+        _text(
+          canvas,
+          note.label,
+          Offset(x, size.height - 15),
+          13,
+          colors.onSurface,
+        );
+      }
     }
   }
 
@@ -139,6 +169,7 @@ class _StaffPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_StaffPainter oldDelegate) =>
+      oldDelegate.stacked != stacked ||
       oldDelegate.notes != notes ||
       oldDelegate.selectedIndex != selectedIndex ||
       oldDelegate.colors != colors;
