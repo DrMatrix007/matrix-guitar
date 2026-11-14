@@ -4,6 +4,7 @@ import '../audio/audio_source.dart';
 import '../theory/harmony.dart';
 import '../theory/scale.dart';
 import 'theory_play_screen.dart';
+import 'theory_visualization.dart';
 
 enum TheoryMode {
   chordTones('Chord-tone targeting'),
@@ -305,6 +306,13 @@ class _TheoryPracticeScreenState extends State<TheoryPracticeScreen> {
           ],
         ],
       ),
+      TheoryVisualization(
+        key: ValueKey((_key, _progression, _mode, _tone, _selectedInversion)),
+        chords: chords,
+        tone: _tone,
+        inversion: _mode == TheoryMode.construction ? _selectedInversion : 0,
+        guideTones: _mode == TheoryMode.guideTones,
+      ),
       const SizedBox(height: 16),
       FilledButton(
         onPressed: () => setState(() {
@@ -412,6 +420,14 @@ class _TheoryPracticeScreenState extends State<TheoryPracticeScreen> {
         onPressed: () => setState(() => _started = false),
         child: const Text('Back to setup'),
       ),
+      if (_feedback != null)
+        TheoryVisualization(
+          key: ValueKey(_index),
+          chords: [_chord],
+          tone: _tone,
+          inversion: _mode == TheoryMode.construction ? _selectedInversion : 0,
+          target: _mode == TheoryMode.guideTones ? _targets[_index] : null,
+        ),
     ];
   }
 }

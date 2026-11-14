@@ -8,6 +8,7 @@ import '../theory/harmony.dart';
 import '../theory/scale.dart';
 import 'mic_gate.dart';
 import 'summary_screen.dart';
+import 'theory_visualization.dart';
 
 class TheoryPlayScreen extends StatefulWidget {
   final List<HarmonyTarget> targets;
@@ -125,6 +126,7 @@ class _TheoryPlayScreenState extends State<TheoryPlayScreen> {
         const Text(
           'String 1 is the thinnest, highest string; string 6 is the thickest, lowest. The number after a note name identifies its octave: match that height, not just the note letter. Play one note, then mute it. Chords with several notes sounding together are ungraded.',
         ),
+        TheoryVisualization(chords: [chord], target: target),
       ],
     );
   }

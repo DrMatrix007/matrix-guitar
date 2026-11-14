@@ -13,12 +13,14 @@ class Fretboard extends StatelessWidget {
   final ScaleDefinition scale;
   final ScalePosition? highlight;
   final bool showNames;
+  final String Function(int)? noteName;
 
   const Fretboard({
     super.key,
     required this.scale,
     this.highlight,
     this.showNames = true,
+    this.noteName,
   });
 
   @override
@@ -29,6 +31,7 @@ class Fretboard extends StatelessWidget {
         painter: _FretboardPainter(
           scale: scale,
           positions: scale.positions,
+          noteName: noteName ?? scale.spelledPitchClass,
           highlight: highlight,
           showNames: showNames,
           colors: Theme.of(context).colorScheme,
@@ -44,6 +47,7 @@ class _FretboardPainter extends CustomPainter {
   final ScalePosition? highlight;
   final bool showNames;
   final ColorScheme colors;
+  final String Function(int) noteName;
 
   _FretboardPainter({
     required this.scale,
@@ -51,6 +55,7 @@ class _FretboardPainter extends CustomPainter {
     required this.highlight,
     required this.showNames,
     required this.colors,
+    required this.noteName,
   });
 
   @override
@@ -126,7 +131,7 @@ class _FretboardPainter extends CustomPainter {
       if (showNames) {
         _paintText(
           canvas,
-          scale.spelledPitchClass(position.midi),
+          noteName(position.midi),
           center,
           onFill,
           rowHeight * 0.4,
@@ -160,6 +165,8 @@ class _FretboardPainter extends CustomPainter {
   @override
   bool shouldRepaint(_FretboardPainter oldDelegate) =>
       oldDelegate.scale != scale ||
+      oldDelegate.noteName != noteName ||
+      oldDelegate.colors != colors ||
       oldDelegate.highlight != highlight ||
       oldDelegate.showNames != showNames;
 }

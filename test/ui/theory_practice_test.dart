@@ -5,6 +5,8 @@ import 'package:matrix_guitar/theory/harmony.dart';
 import 'package:matrix_guitar/ui/scale_list_screen.dart';
 import 'package:matrix_guitar/ui/theory_play_screen.dart';
 import 'package:matrix_guitar/ui/theory_practice_screen.dart';
+import 'package:matrix_guitar/ui/staff_notation.dart';
+import 'package:matrix_guitar/ui/fretboard.dart';
 
 import '../helpers/fake_audio_source.dart';
 
@@ -117,6 +119,8 @@ void main() {
       ),
     );
     await startPractice(tester);
+    expect(find.byType(StaffNotation), findsNothing);
+    expect(find.byType(Fretboard), findsNothing);
     await tapLabel(tester, 'Remember the method');
     expect(find.textContaining('a minor third 3'), findsOneWidget);
     expect(find.textContaining('Worked example:'), findsNothing);
@@ -129,6 +133,9 @@ void main() {
       findsOneWidget,
     );
     expect(find.textContaining('notes: D–F–A–C'), findsOneWidget);
+    await tester.scrollUntilVisible(find.byType(StaffNotation), 250);
+    expect(find.byType(StaffNotation), findsOneWidget);
+    expect(find.byType(Fretboard), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -315,6 +322,15 @@ void main() {
       fake.feed(synthPluck(midi: targets.first.position.midi, duration: .7));
       await tester.pump();
       expect(find.text('G7'), findsOneWidget);
+      await tester.scrollUntilVisible(find.byType(StaffNotation), 250);
+      expect(
+        tester
+            .widget<StaffNotation>(find.byType(StaffNotation))
+            .notes
+            .single
+            .midi,
+        targets[1].position.midi,
+      );
       for (final target in targets.skip(1)) {
         fake.feed(synthPluck(midi: target.position.midi, duration: .7));
         await tester.pump();
