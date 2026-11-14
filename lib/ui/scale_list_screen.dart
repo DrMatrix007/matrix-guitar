@@ -5,6 +5,7 @@ import '../theory/chord.dart';
 import '../theory/scale.dart';
 import 'chord_list_screen.dart';
 import 'scale_detail_screen.dart';
+import 'theory_practice_screen.dart';
 
 class ScaleListScreen extends StatelessWidget {
   final AudioSource Function(List<ScalePosition>) audioSourceFactory;
@@ -19,15 +20,17 @@ class ScaleListScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 3,
+      length: 4,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Matrix Guitar'),
           bottom: const TabBar(
+            isScrollable: true,
             tabs: [
               Tab(text: 'Scales'),
               Tab(text: 'Arpeggios'),
               Tab(text: 'Chords'),
+              Tab(text: 'Theory'),
             ],
           ),
         ),
@@ -36,6 +39,7 @@ class ScaleListScreen extends StatelessWidget {
             _patternList(context, PatternKind.scale),
             _patternList(context, PatternKind.arpeggio),
             ChordListScreen(chordAudioSourceFactory: chordAudioSourceFactory),
+            TheoryPracticeScreen(audioSourceFactory: audioSourceFactory),
           ],
         ),
       ),
