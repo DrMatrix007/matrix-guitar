@@ -1,4 +1,4 @@
-<img src="assets/icon.svg" width="64" height="64" alt="">
+<img src="assets/app-icon.png" width="64" height="64" alt="Matrix Guitar app icon">
 
 # matrix-guitar
 
