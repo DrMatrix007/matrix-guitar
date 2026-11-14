@@ -66,7 +66,7 @@ class _TheoryVisualizationState extends State<TheoryVisualization> {
           ]
         : [
             for (final (i, p) in positions.indexed)
-              StaffNote(p.midi, chord.toneName(order[i])),
+              StaffNote(p.midi + 12, chord.toneName(order[i])),
           ];
     final selectedIndex = widget.target != null
         ? 0
@@ -78,9 +78,15 @@ class _TheoryVisualizationState extends State<TheoryVisualization> {
       children: [
         const Text('Standard notation · treble clef'),
         const Text(
-          'Sounding pitches (middle C = C4); accidentals shown on every note.',
+          'Middle C = C4. Chord stacks are shown one octave above the guitar positions for readability; single-note paths use the actual guitar octave.',
         ),
-        StaffNotation(notes: notes, selectedIndex: selectedIndex),
+        StaffNotation(
+          notes: notes,
+          selectedIndex: selectedIndex,
+          stacked: widget.target == null && !widget.guideTones,
+        ),
+        if (widget.target == null && !widget.guideTones)
+          Text('Bass to top: ${notes.map((note) => note.label).join('–')}'),
       ],
     );
     final board = Column(
@@ -89,7 +95,7 @@ class _TheoryVisualizationState extends State<TheoryVisualization> {
         const Text('Fretboard · frets 3–7 · string 1 at top'),
         Semantics(
           label:
-              '${notes[selectedIndex].label}, string ${selectedPosition.string}, fret ${selectedPosition.fret}, selected',
+              '${chord.toneName(tone)}, MIDI ${selectedPosition.midi}, string ${selectedPosition.string}, fret ${selectedPosition.fret}, selected',
           child: Fretboard(
             scale: chord.scale,
             highlight: selectedPosition,
@@ -134,7 +140,7 @@ class _TheoryVisualizationState extends State<TheoryVisualization> {
           Text(
             widget.guideTones
                 ? 'Guide-tone path · select a chord to locate its note.'
-                : 'Ascending chord tones · bass to top: ${chord.inversionNames(widget.inversion).join('–')}. Illustrative single notes, not a simultaneous guitar voicing.',
+                : 'Stacked chord · bass to top: ${chord.inversionNames(widget.inversion).join('–')}. Notes aligned vertically sound together. Fretboard dots show available chord tones, not a prescribed guitar shape.',
           ),
         ],
         LayoutBuilder(

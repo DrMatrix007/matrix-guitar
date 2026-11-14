@@ -4,6 +4,7 @@ import '../audio/audio_source.dart';
 import '../theory/chord.dart';
 import 'chord_detail_screen.dart';
 import 'library_tile.dart';
+import 'progression_explorer.dart';
 
 class ChordListScreen extends StatelessWidget {
   final AudioSource Function(ChordVoicing) chordAudioSourceFactory;
@@ -15,6 +16,13 @@ class ChordListScreen extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       children: [
+        const ExpansionTile(
+          leading: Icon(Icons.route),
+          title: Text('Explore chord progressions'),
+          subtitle: Text('Chord roles, shared notes and voice leading'),
+          childrenPadding: EdgeInsets.all(16),
+          children: [ProgressionExplorer()],
+        ),
         for (final (index, chord) in chordLibrary.indexed) ...[
           if (index == 0 || chordLibrary[index - 1].group != chord.group)
             Padding(

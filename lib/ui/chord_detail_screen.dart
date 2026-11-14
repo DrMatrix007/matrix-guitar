@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../audio/audio_source.dart';
 import '../theory/chord.dart';
 import 'chord_diagram.dart';
+import 'chord_explanation.dart';
 import 'chord_practice_screen.dart';
 import 'fretboard.dart';
 import 'legend_entry.dart';
@@ -39,19 +40,13 @@ class ChordDetailScreen extends StatelessWidget {
             SizedBox(
               height: 280,
               child: Center(
-                child: SizedBox(
-                  width: 200,
-                  child: ChordDiagram(chord: chord),
-                ),
+                child: SizedBox(width: 200, child: ChordDiagram(chord: chord)),
               ),
             ),
             const SizedBox(height: 16),
             Text('Notes: $notes', style: textTheme.titleMedium),
             const SizedBox(height: 8),
-            Text(
-              _stringsDescription(),
-              style: textTheme.bodyMedium,
-            ),
+            Text(_stringsDescription(), style: textTheme.bodyMedium),
             const SizedBox(height: 8),
             Row(
               children: [
@@ -60,6 +55,7 @@ class ChordDetailScreen extends StatelessWidget {
                 const LegendEntry(color: highlightFill, label: 'Other'),
               ],
             ),
+            ChordExplanation(chord: chord),
             const SizedBox(height: 24),
             FilledButton(
               onPressed: () => Navigator.of(context).push(

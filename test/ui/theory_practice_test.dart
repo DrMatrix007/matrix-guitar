@@ -7,6 +7,7 @@ import 'package:matrix_guitar/ui/theory_play_screen.dart';
 import 'package:matrix_guitar/ui/theory_practice_screen.dart';
 import 'package:matrix_guitar/ui/staff_notation.dart';
 import 'package:matrix_guitar/ui/fretboard.dart';
+import 'package:matrix_guitar/ui/fretboard_key_selector.dart';
 
 import '../helpers/fake_audio_source.dart';
 
@@ -44,10 +45,27 @@ Future<void> chooseDropdown(
       .position
       .jumpTo(0);
   await tester.pumpAndSettle();
+  if (index == 0) {
+    final root = {'F major': 5, 'Db major': 1}[choice]!;
+    tester
+        .widget<FretboardKeySelector>(find.byType(FretboardKeySelector).last)
+        .onChanged(root);
+    await tester.pumpAndSettle();
+    return;
+  }
   final dropdowns = find.byWidgetPredicate(
     (widget) => widget is DropdownButton<int>,
   );
-  await tester.tap(dropdowns.at(index));
+  for (
+    var attempt = 0;
+    attempt < 8 && dropdowns.evaluate().isEmpty;
+    attempt++
+  ) {
+    await tester.drag(find.byType(ListView).last, const Offset(0, -250));
+    await tester.pumpAndSettle();
+  }
+  await tester.ensureVisible(dropdowns.at(index - 1));
+  await tester.tap(dropdowns.at(index - 1));
   await tester.pumpAndSettle();
   await tester.tap(find.text(choice).last);
   await tester.pumpAndSettle();
